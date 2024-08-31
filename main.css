@@ -1,0 +1,175 @@
+/* Body Styles */
+body {
+  font-family: monospace;
+  margin: 0; 
+  padding: 20px;
+  background-color: #f9f9f9; /* Changed background color */
+}
+
+footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+}
+/* Header Styles */  
+h1 {
+  text-align: center;
+  color: #1e50ee; /* Added text color */
+}
+
+h2 {
+  margin-top: 20px;
+  color: #1e50ee; /* Added text color */
+}
+
+/* Form Styles */
+form {
+  margin-bottom: 20px;
+  background-color: #fff; /* Added form background */
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Added subtle shadow */
+}
+
+form input {
+  margin: 5px; /* Adjusted input margin */
+  padding: 8px; 
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Add One Button Styles */  
+input[name="add_one"],
+input[name="import_csv"], 
+input[type="submit"] {
+  padding: 8px 12px; 
+  cursor: pointer;
+  background-color: #1e50ee; /* Changed button color */
+  color: #fff; /* White text */
+  border: none;
+  border-radius: 4px;
+  float: right; /* Align buttons right */
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+table, th, td {
+  border: 1px solid #ddd; 
+}
+
+th, td {
+  padding: 8px;
+  text-align: left; /* Aligned text left */
+}
+
+th {
+  background-color: #f2f2f2; 
+}
+
+/* Image Styles */
+img {
+  max-width: 100px;
+  max-height: 100px;
+  border-radius: 4px; /* Added rounded corners */
+}
+
+/* Button Styles */
+button {
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 20px;
+  background-color: #1e50ee; /* Changed button color */
+  color: #fff;
+  border: none;
+}
+
+/* Image Popup Styles */
+.popup-container {
+  position: relative;
+  display: inline-block;
+}
+
+.popup-content {
+  visibility: hidden;
+  width: 200px;
+  background-color: #f9f9f9;
+  color: #000;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -100px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.popup-container:hover .popup-content {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Timeline Container Styles */
+#timeline {
+  height: 400px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  background-color: #fff; /* Set timeline background */
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Added subtle shadow */
+}
+/* Define a container for the charts with a flex layout */
+.chart-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between; /* Ensure space between charts */
+    gap: 20px; /* Space between charts */
+    margin: 20px auto;
+}
+
+/* Style individual canvas elements */
+.chart-container canvas {
+    flex: 1 1 45%; /* Allow flexing with minimum 45% width */
+    max-width: 45%;
+    min-width: 300px; /* Minimum width for readability */
+    max-height: 300px; /* Maximum height for visibility */
+    border: 1px solid #ddd; /* Optional: Border for canvas */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Shadow effect */
+    padding: 10px;
+    background-color: #fff; /* Background color */
+    border-radius: 8px; /* Rounded corners */
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+}
+
+/* Ensure the canvas containers are responsive */
+canvas {
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Adjust for smaller screens */
+@media (max-width: 768px) {
+    .chart-container {
+        flex-direction: column; /* Stack charts vertically */
+    }
+
+    .chart-container canvas {
+        max-width: 100%; /* Full width on small screens */
+    }
+}
+
