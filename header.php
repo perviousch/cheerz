@@ -43,6 +43,7 @@
                 <li><a href="promotions.php">Promotions</a></li>
 				<li><a href="inventory.php">Inventory</a></li>
                 <li><a href="tools.php">Tools</a></li>
+				<li><a href="../flyer_development/login.php">Flyer portal</a></li>
             </ul>
         </nav>
     </header>

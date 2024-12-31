@@ -1,6 +1,7 @@
 <link rel="stylesheet" href="main.css">
 <?php
 include 'dbconnections.php';
+
 // Function to convert date format from dd/mm/yyyy to YYYY-MM-DD
 function formatDate($date) {
     $dateObj = DateTime::createFromFormat('d/m/Y', $date);
@@ -32,7 +33,7 @@ if (isset($_POST['upload'])) {
         if ($count > 0) continue; // Skip existing dates
 
         // Insert new data
-        $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS, SLT, LBM) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($query);
         $stmt->execute(array_merge([$date, $total_registration], $stores));
     }
@@ -41,7 +42,24 @@ if (isset($_POST['upload'])) {
     echo "CSV data uploaded successfully!";
 }
 
-// Fetch data for table display
+// Handle single entry submission
+if (isset($_POST['submit_single'])) {
+    $date = $_POST['date'];
+    $total_registration = $_POST['total_registration'];
+    $stores = [
+        $_POST['GC'], $_POST['KAB'], $_POST['IBEX'], $_POST['MM'],
+        $_POST['CM'], $_POST['CV'], $_POST['TP'], $_POST['NGW'],
+        $_POST['ZBR'], $_POST['LM'], $_POST['KS'], $_POST['SLT'], $_POST['LBM']
+    ];
+
+    $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS, SLT, LBM) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    $stmt = $conn->prepare($query);
+    $stmt->execute(array_merge([$date, $total_registration], $stores));
+
+    echo "Single entry added successfully!";
+}
+
+// Fetch data for table display and charts
 $query = "SELECT * FROM loyalty_registration ORDER BY registration_date ASC";
 $result = $conn->query($query);
 $data = $result->fetchAll(PDO::FETCH_ASSOC);
@@ -49,7 +67,7 @@ $data = $result->fetchAll(PDO::FETCH_ASSOC);
 // Prepare data for charts
 $dates = array_column($data, 'registration_date');
 $totalRegistrations = array_column($data, 'total_registration');
-$stores = ['GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS'];
+$stores = ['GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS', 'SLT', 'LBM'];
 
 // Weekly data
 $weeklyData = [];
@@ -80,39 +98,42 @@ foreach ($stores as $store) {
 }
 
 // Daily average
-$dailyAverage = array_sum($totalRegistrations) / count($data);
+$dailyAverage = count($data) > 0 ? array_sum($totalRegistrations) / count($data) : 0;
 
 // Future projections (simple linear regression)
 $xValues = array_keys($monthlyData);
 $yValues = array_values($monthlyData);
-$xValuesNumeric = array_map(function($date) {
-    return strtotime($date);
-}, $xValues);
+$xValuesNumeric = array_map('strtotime', $xValues);
 $n = count($xValuesNumeric);
-$sumX = array_sum($xValuesNumeric);
-$sumY = array_sum($yValues);
-$sumXY = 0;
-$sumXX = 0;
-for ($i = 0; $i < $n; $i++) {
-    $sumXY += $xValuesNumeric[$i] * $yValues[$i];
-    $sumXX += $xValuesNumeric[$i] * $xValuesNumeric[$i];
-}
-$slope = ($n * $sumXY - $sumX * $sumY) / ($n * $sumXX - $sumX * $sumX);
-$intercept = ($sumY - $slope * $sumX) / $n;
 
-// Generate future dates
-$lastDate = end($xValues);
-$futureMonths = [];
-for ($i = 1; $i <= 12; $i++) {
-    $futureMonths[] = date('Y-m', strtotime($lastDate . " +$i months"));
+if ($n > 1) {
+    $sumX = array_sum($xValuesNumeric);
+    $sumY = array_sum($yValues);
+    $sumXY = array_sum(array_map(function($x, $y) { return $x * $y; }, $xValuesNumeric, $yValues));
+    $sumXX = array_sum(array_map(function($x) { return $x * $x; }, $xValuesNumeric));
+
+    $slope = ($n * $sumXY - $sumX * $sumY) / ($n * $sumXX - $sumX * $sumX);
+    $intercept = ($sumY - $slope * $sumX) / $n;
+
+    // Generate future dates
+    $lastDate = end($xValues);
+    $futureMonths = [];
+    $projections = [];
+    for ($i = 1; $i <= 12; $i++) {
+        $futureMonth = date('Y-m', strtotime($lastDate . " +$i months"));
+        $futureMonths[] = $futureMonth;
+        $timestamp = strtotime($futureMonth);
+        $projections[] = max(0, round($slope * $timestamp + $intercept)); // Ensure non-negative projections
+    }
+} else {
+    $futureMonths = [];
+    $projections = [];
 }
 
-// Calculate projections
-$projections = [];
-foreach ($futureMonths as $month) {
-    $timestamp = strtotime($month);
-    $projections[] = $slope * $timestamp + $intercept;
-}
+
+// Day of week data (example data - replace with your actual data)
+$dayOfWeekData = [10, 15, 20, 18, 22, 25, 12];
+
 
 // Prepare JavaScript data
 $jsWeeklyData = json_encode(array_values($weeklyData));
@@ -120,134 +141,170 @@ $jsMonthlyData = json_encode(array_values($monthlyData));
 $jsStoreData = json_encode(array_values($storeData));
 $jsFutureMonths = json_encode($futureMonths);
 $jsProjections = json_encode($projections);
-
+$jsDayOfWeekData = json_encode(array_values($dayOfWeekData));
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loyalty Program Analytics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-	<style>
-	/* Define a container for the charts with a flex layout */
-.chart-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between; /* Ensure space between charts */
-    gap: 20px; /* Space between charts */
-    margin: 20px auto;
-}
-
-/* Style individual canvas elements */
-.chart-container canvas {
-    flex: 1 1 45%; /* Allow flexing with minimum 45% width */
-    max-width: 45%;
-    min-width: 300px; /* Minimum width for readability */
-    max-height: 300px; /* Maximum height for visibility */
-    border: 1px solid #ddd; /* Optional: Border for canvas */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: Shadow effect */
-    padding: 10px;
-    background-color: #fff; /* Background color */
-    border-radius: 8px; /* Rounded corners */
-    box-sizing: border-box; /* Include padding and border in element's total width and height */
-}
-
-/* Ensure the canvas containers are responsive */
-canvas {
-    width: 100% !important;
-    height: auto !important;
-}
-
-/* Adjust for smaller screens */
-@media (max-width: 768px) {
-    .chart-container {
-        flex-direction: column; /* Stack charts vertically */
-    }
-
-    .chart-container canvas {
-        max-width: 100%; /* Full width on small screens */
-    }
-}
-
-	</style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .chart {
+            flex: 1 1 calc(50% - 10px);
+            min-width: 45%;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            height: 300px;
+        }
+        .form-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form {
+            flex: 1;
+            background-color: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #2a2a2a;
+        }
+        th, td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #333;
+        }
+        input[type="file"], input[type="text"], input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            background-color: #333;
+            border: 1px solid #444;
+            color: #e0e0e0;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
     <div class="header-container">
         <header>
             <?php include('header.php'); ?>
-			<link rel="stylesheet" href="main.css">
-			<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@1.1.1/dist/chartjs-chart-matrix.min.js"></script>
         </header>
     </div>
-    <h1>Loyalty Program Analytics</h1>
-    <!-- Data Visualization Section -->
-    <h2>Data Visualization</h2>
-<div class="chart-container">
-    <canvas id="weeklyChart"></canvas>
-    <canvas id="monthlyChart"></canvas>
-    <canvas id="storePerformanceChart"></canvas>
-    <canvas id="dailyAverageChart"></canvas>
-    <canvas id="futureProjectionsChart"></canvas>
-</div>
+    <div class="container">
+        <h1>Loyalty Program Analytics</h1>
 
-    <!-- CSV Upload Section -->
-    <h2>Upload CSV</h2>
-    <form enctype="multipart/form-data" method="post">
-        <input type="file" name="csv" accept=".csv" required>
-        <input type="submit" name="upload" value="Upload CSV">
-    </form>
+        <div class="chart-container">
+            <div class="chart">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="storePerformanceChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="dailyAverageChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="futureProjectionsChart"></canvas>
+            </div>
+            <div class="chart">
+                <canvas id="dayOfWeekChart"></canvas>
+            </div>
+        </div>
 
-    <!-- Data Table Section -->
-    <h2>Data Table</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Total Registrations</th>
-                <th>GC</th>
-                <th>KAB</th>
-                <th>IBEX</th>
-                <th>MM</th>
-                <th>CM</th>
-                <th>CV</th>
-                <th>TP</th>
-                <th>NGW</th>
-                <th>ZBR</th>
-                <th>LM</th>
-                <th>KS</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php
-            if (count($data) > 0) {
-                foreach ($data as $row) {
-                    echo "<tr>";
-                    echo "<td>{$row['registration_date']}</td>";
-                    echo "<td>{$row['total_registration']}</td>";
-                    echo "<td>{$row['GC']}</td>";
-                    echo "<td>{$row['KAB']}</td>";
-                    echo "<td>{$row['IBEX']}</td>";
-                    echo "<td>{$row['MM']}</td>";
-                    echo "<td>{$row['CM']}</td>";
-                    echo "<td>{$row['CV']}</td>";
-                    echo "<td>{$row['TP']}</td>";
-                    echo "<td>{$row['NGW']}</td>";
-                    echo "<td>{$row['ZBR']}</td>";
-                    echo "<td>{$row['LM']}</td>";
-                    echo "<td>{$row['KS']}</td>";
-                    echo "</tr>";
-                }
-            } else {
-                echo "<tr><td colspan='13'>No data available</td></tr>";
-            }
-            ?>
-        </tbody>
-    </table>
+        <div class="form-container">
+            <div class="form">
+                <h2>Upload CSV</h2>
+                <form enctype="multipart/form-data" method="post">
+                    <input type="file" name="csv" accept=".csv" required>
+                    <input type="submit" name="upload" value="Upload CSV">
+                </form>
+            </div>
+
+            <div class="form">
+                <h2>Add Single Entry</h2>
+                <form method="post">
+                    <input type="date" name="date" required>
+                    <input type="number" name="total_registration" placeholder="Total Registration" required>
+                    <?php foreach ($stores as $store): ?>
+                        <input type="number" name="<?php echo $store; ?>" placeholder="<?php echo $store; ?>">
+                    <?php endforeach; ?>
+                    <input type="submit" name="submit_single" value="Add Entry">
+                </form>
+            </div>
+        </div>
+
+        <h2>Data Table</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Total Registrations</th>
+                    <?php foreach ($stores as $store): ?>
+                        <th><?php echo $store; ?></th>
+                    <?php endforeach; ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($data as $row): ?>
+                    <tr>
+                        <td><?php echo $row['registration_date']; ?></td>
+                        <td><?php echo $row['total_registration']; ?></td>
+                        <?php foreach ($stores as $store): ?>
+                            <td><?php echo $row[$store]; ?></td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
 
     <script>
         // Weekly Chart
         var ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
-        var weeklyChart = new Chart(ctxWeekly, {
+        new Chart(ctxWeekly, {
             type: 'line',
             data: {
                 labels: <?php echo json_encode(array_keys($weeklyData)); ?>,
@@ -260,6 +317,7 @@ canvas {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true
@@ -270,7 +328,7 @@ canvas {
 
         // Monthly Chart
         var ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
-        var monthlyChart = new Chart(ctxMonthly, {
+        new Chart(ctxMonthly, {
             type: 'bar',
             data: {
                 labels: <?php echo json_encode(array_keys($monthlyData)); ?>,
@@ -282,6 +340,7 @@ canvas {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true
@@ -292,7 +351,7 @@ canvas {
 
         // Store Performance Chart
         var ctxStore = document.getElementById('storePerformanceChart').getContext('2d');
-        var storeChart = new Chart(ctxStore, {
+        new Chart(ctxStore, {
             type: 'bar',
             data: {
                 labels: <?php echo json_encode($stores); ?>,
@@ -304,6 +363,7 @@ canvas {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true
@@ -314,7 +374,7 @@ canvas {
 
         // Daily Average Chart
         var ctxDaily = document.getElementById('dailyAverageChart').getContext('2d');
-        var dailyChart = new Chart(ctxDaily, {
+        new Chart(ctxDaily, {
             type: 'doughnut',
             data: {
                 labels: ['Daily Average', 'Remaining Capacity'],
@@ -325,6 +385,7 @@ canvas {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
@@ -336,7 +397,7 @@ canvas {
 
         // Future Projections Chart
         var ctxProjections = document.getElementById('futureProjectionsChart').getContext('2d');
-        var projectionsChart = new Chart(ctxProjections, {
+        new Chart(ctxProjections, {
             type: 'line',
             data: {
                 labels: <?php echo $jsFutureMonths; ?>,
@@ -349,6 +410,7 @@ canvas {
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 scales: {
                     y: {
                         beginAtZero: true
@@ -356,9 +418,29 @@ canvas {
                 }
             }
         });
-		
+
+        // Day of Week Chart
+        var ctxDayOfWeek = document.getElementById('dayOfWeekChart').getContext('2d');
+        new Chart(ctxDayOfWeek, {
+            type: 'bar',
+            data: {
+                labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+                datasets: [{
+                    label: 'Average Registrations by Day of Week',
+                    data: <?php echo $jsDayOfWeekData; ?>,
+                    backgroundColor: 'rgb(75, 192, 192)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
     </script>
-
-
 </body>
 </html>

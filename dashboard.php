@@ -1,18 +1,9 @@
-<link rel="stylesheet" href="main.css">
 <?php
-
 // Include database connection
 include 'dbconnections.php'; 
 
-?>
-
-<?php
-
-// Connect to database
-
 // Handle add one product
 if(isset($_POST['add_one'])) {
-
   $product_code = $_POST['product_code'];
   $product_name = $_POST['product_name'];
   $catalogue_name = $_POST['catalogue_name'];
@@ -54,7 +45,6 @@ if(isset($_POST['import_csv'])) {
 
 // Handle image upload
 if(isset($_POST['upload_image'])) {
-
   $fileName = $_FILES['product_image']['name'];
   $fileTmpName = $_FILES['product_image']['tmp_name'];
   $fileType = $_FILES['product_image']['type'];
@@ -77,7 +67,6 @@ if(isset($_POST['upload_image'])) {
 
 // Download image
 if(isset($_POST['download_image'])) {
-
   $product_code = $_POST['product_code'];
 
   // Use prepared statements to avoid SQL injection
@@ -85,7 +74,7 @@ if(isset($_POST['download_image'])) {
   $stmt->execute([$product_code]);
   $product = $stmt->fetch();
 
-  if ($product) {
+  if ($product && file_exists($product['image_url'])) {
     $product_name = $product['product_name'];
     $image_path = $product['image_url'];
 
@@ -113,20 +102,18 @@ if(isset($_POST['download_image'])) {
     // Set headers
     header('Content-Type: '.$mime_type); 
     header('Content-Disposition: attachment; filename="'.urlencode($product_name).'.'.$image_ext.'"');
+    header('Content-Length: ' . filesize($image_path));
+
+    // Disable output buffering
+    if (ob_get_level()) ob_end_clean();
 
     // Output image
     readfile($image_path);
     exit;
   } else {
-    echo "Product not found.";
+    echo "Product image not found.";
   }
 }
-
-
-
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -134,7 +121,7 @@ if(isset($_POST['download_image'])) {
 <head>
     <title>Product Dashboard</title>
     <link rel="stylesheet" href="main.css"> 
-	<script>
+    <script>
     document.addEventListener('DOMContentLoaded', function () {
         var images = document.querySelectorAll('.popup-container');
 
@@ -152,13 +139,14 @@ if(isset($_POST['download_image'])) {
             });
         });
     });
-</script>
-   <style>
+    </script>
+    <style>
         body {
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
         }
 
         .header-container {
@@ -168,10 +156,10 @@ if(isset($_POST['download_image'])) {
         header {
             position: relative;
             width: 100%;
-            background-color: #fff;
+            background-color: #2a2a2a;
             z-index: 1000;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-            transition: position 0.3s ease; /* Add transition for smooth effect */
+            box-shadow: 0px 2px 5px rgba(255, 255, 255, 0.1);
+            transition: position 0.3s ease;
         }
 
         .fixed-header {
@@ -188,21 +176,117 @@ if(isset($_POST['download_image'])) {
         nav li {
             display: inline-block;
             margin: 0 10px;
-            background-color: #f4f4f4;
+            background-color: #333;
             padding: 10px;
             border-radius: 5px;
             transition: background-color 0.3s;
         }
 
         nav li:hover {
-            background-color: #6ca0fa;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: #4a9eff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
 
         nav a {
             text-decoration: none;
-            color: #333;
+            color: #e0e0e0;
             font-weight: bold;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .dashboard-section {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(255,255,255,0.1);
+        }
+        
+        .dashboard-section h3 {
+            margin-top: 0;
+            color: #4a9eff;
+        }
+        
+        .dashboard-section form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .dashboard-section input[type="text"],
+        .dashboard-section input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background-color: #333;
+            color: #e0e0e0;
+        }
+        
+        .dashboard-section button {
+            align-self: flex-end;
+            padding: 8px 12px;
+            cursor: pointer;
+            background-color: #4a9eff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #2a2a2a;
+        }
+
+        table, th, td {
+            border: 1px solid #444;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333;
+        }
+
+        .popup-container {
+            position: relative;
+        }
+
+        .popup-content {
+            visibility: hidden;
+            width: 200px;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            text-align: center;
+            border: 1px solid #444;
+            border-radius: 5px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .popup-container:hover .popup-content {
+            visibility: visible;
+            opacity: 1;
         }
     </style>
     <script>
@@ -228,122 +312,102 @@ if(isset($_POST['download_image'])) {
         </header>
     </div>
 
+    <div class="dashboard-grid">
+        <div class="dashboard-section">
+            <h3>Add Product</h3>
+            <form method="post" action="">
+                <input type="text" name="product_code" placeholder="Product code">
+                <input type="text" name="product_name" placeholder="Product name">
+                <input type="text" name="catalogue_name" placeholder="Catalogue name">
+                <input type="text" name="category" placeholder="Category">
+                <input type="text" name="supplier_name" placeholder="Supplier name">
+                <button type="submit" name="add_one">Add Product</button>
+            </form>
+        </div>
 
-<form method="post" action="">
-<table>
-  <tr>
-    <td><h4>Product code</h4></td>
-    <td><input type="text" name="product_code"></td> 
-  </tr>
-  
-  <tr>
-    <td><h4>Product name</h4></td>
-    <td><input type="text" name="product_name"></td>
-  </tr>
+        <div class="dashboard-section">
+            <h3>Import CSV</h3>
+            <form method="post" enctype="multipart/form-data" action="">
+                <input type="file" name="csv_file">
+                <button type="submit" name="import_csv">Import CSV</button>
+            </form>
+        </div>
 
-  <tr>
-    <td><h4>Catalogue name</h4></td>
-    <td><input type="text" name="catalogue_name"></td>
-  </tr>
+        <div class="dashboard-section">
+            <h3>Search Products</h3>
+            <form method="get">
+                <input type="text" name="search" placeholder="Search...">
+                <button type="submit">Search</button>
+                <button type="submit">View All</button>
+            </form>
+        </div>
+    </div>
 
-  <tr>
-    <td><h4>Category</h4></td>
-    <td><input type="text" name="category"></td>
-  </tr>
+    <div class="full-width">
+        <table>
+            <tr>
+                <th>Product Code</th>
+                <th>Product Name</th>
+                <th>Catalogue Name</th>
+                <th>Category</th>
+                <th>Supplier</th>
+                <th>Last Updated</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
 
-  <tr>
-    <td><h4>Supplier name</h4></td>
-    <td><input type="text" name="supplier_name"></td>
-  </tr>
+            <?php
+            // Fetch and display products
+            if(isset($_GET['search'])) {
+                $search = $_GET['search'];
+                $sql = "SELECT * FROM products WHERE product_code LIKE ? OR product_name LIKE ? OR category LIKE ? OR supplier_name LIKE ?";
+                $stmt = $conn->prepare($sql);
+                $stmt->execute(["%$search%", "%$search%", "%$search%", "%$search%"]);
+            } else {
+                $sql = "SELECT * FROM products ORDER BY `products`.`last_update` DESC";
+                $stmt = $conn->query($sql);  
+            }
 
-  <tr>
-    <td colspan="2"><button type="submit" name="add_one">Add Product</button></td>
-  </tr>
+            while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                echo "<tr>";
+                echo "<td>" . $row['product_code'] . "</td>";
+                echo "<td>" . $row['product_name'] . "</td>";
+                echo "<td>" . $row['catalogue_name'] . "</td>"; 
+                echo "<td>" . $row['category'] . "</td>";
+                echo "<td>" . $row['supplier_name'] . "</td>";
+                echo "<td>" . $row['last_update'] . "</td>";
+                
+                echo "<td class='popup-container'>";
+                if($row['image_url']) {
+                    echo "<img height='50' src='". $row['image_url'] ."'>";
+                    echo "<div class='popup-content'>";
+                    echo "<img src='". $row['image_url'] ."' style='max-width: 100%;'>";
+                    echo "</div>";
+                    echo "<form method='post' enctype='multipart/form-data'>";
+                    echo "<input type='hidden' name='product_code' value='". $row['product_code'] ."'>";
+                    echo "<input type='hidden' name='image_url' value='". $row['image_url'] ."'>";
+                    echo "<input type='file' name='product_image'>";
+                    echo "<button type='submit' name='download_image'>Download Image</button>";
+                    echo "<button type='submit' name='upload_image'>Upload</button>";
+                    echo "</form>";
+                } else {
+                    echo "<form method='post' enctype='multipart/form-data'>";
+                    echo "<input type='hidden' name='product_code' value='". $row['product_code'] ."'>";
+                    echo "<input type='file' name='product_image'>";
+                    echo "<button type='submit' name='upload_image'>Upload</button>";
+                    echo "</form>";
+                }
+                echo "</td>";
 
-</table>
-</form>
+                echo "<td>";
+                echo "<button name='update' value='". $row['product_code'] ."'>Update</button> ";
+                echo "<button name='delete' value='". $row['product_code'] ."'>Delete</button>";
+                echo "</td>";
 
-<form method="post" enctype="multipart/form-data" action="">
-  <input type="file" name="csv_file">
-  <button type="submit" name="import_csv">Import CSV</button>
-</form>
-
-<form method="get">
-  <input type="text" name="search">
-  <button type="submit">Search</button> 
-  <button type="submit">View All</button> 
-</form>
-
-<table border="1">
-  <tr>
-    <th>Product Code</th>
-    <th>Product Name</th>
-	<th>catalogue name</th>
-    <th>Category</th>
-    <th>Supplier</th>
-    <th>Last Updated</th>
-    <th>Image</th>
-    <th>Actions</th>
-  </tr>
-
-<?php
-
-// Fetch and display products
-if(isset($_GET['search'])) {
-  $search = $_GET['search'];
-  $sql = "SELECT * FROM products WHERE product_code LIKE ? OR product_name LIKE ? OR category LIKE ? OR supplier_name LIKE ?";
-  $stmt = $conn->prepare($sql);
-  $stmt->execute(["%$search%", "%$search%", "%$search%", "%$search%"]);
-} else {
-  $sql = "SELECT * FROM products ORDER BY `products`.`last_update` DESC";
-  $stmt = $conn->query($sql);  
-}
-
-while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-
-  echo "<tr>";
-  echo "<td>" . $row['product_code'] . "</td>";
-  echo "<td>" . $row['product_name'] . "</td>";
-  echo "<td>" . $row['catalogue_name'] . "</td>"; 
-  echo "<td>" . $row['category'] . "</td>";
-  echo "<td>" . $row['supplier_name'] . "</td>";
-  echo "<td>" . $row['last_update'] . "</td>";
-  
-  echo "<td class='popup-container'>";
-if($row['image_url']) {
-    echo "<img height='50' src='". $row['image_url'] ."'>";
-    echo "<div class='popup-content'>";
-    echo "<img src='". $row['image_url'] ."' style='max-width: 100%;'>";
-    echo "</div>";
-    echo "<form method='post' enctype='multipart/form-data'>";
-    echo "<input type='hidden' name='product_code' value='". $row['product_code'] ."'>";
-    echo "<input type='hidden' name='image_url' value='". $row['image_url'] ."'>";
-    echo "<input type='file' name='product_image'>";
-    echo "<button type='submit' name='download_image'>Download Image</button>";
-    echo "<button type='submit' name='upload_image'>Upload</button>";
-    echo "</form>";
-  } else {
-    echo "<form method='post' enctype='multipart/form-data'>";
-    echo "<input type='hidden' name='product_code' value='". $row['product_code'] ."'>";
-    echo "<input type='file' name='product_image'>";
-    echo "<button type='submit' name='upload_image'>Upload</button>";
-	
-    echo "</form>";
-  }
-  echo "</td>";
-
-  echo "<td>";
-  echo "<button name='update' value='". $row['product_code'] ."'>Update</button> ";
-  echo "<button name='delete' value='". $row['product_code'] ."'>Delete</button>";
-  echo "</td>";
-
-  echo "</tr>";
-
-}
-
-?>
-
-</table>
-</div>
+                echo "</tr>";
+            }
+            ?>
+        </table>
+    </div>
 </body>
 </html>

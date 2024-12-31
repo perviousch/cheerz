@@ -29,14 +29,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["material_name"])) {
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tools</title>
+    <link rel="stylesheet" href="main.css">
     <style>
         .tools-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* Adjust the number of columns as needed */
-            gap: 20px; /* Adjust the gap between buttons */
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
             padding: 20px;
         }
 
@@ -55,23 +58,66 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["material_name"])) {
         .tool-button:hover {
             background-color: #ddd;
         }
-footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 10px;
-}
+
+        .content-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .section {
+            flex-basis: calc(33.33% - 20px);
+            margin-bottom: 20px;
+        }
+
+        .form-container {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .form-container h2 {
+            margin-top: 0;
+        }
+
+        .form-container form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-container input[type="text"],
+        .form-container input[type="number"],
+        .form-container textarea {
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+
+        .form-container input[type="submit"] {
+            align-self: flex-start;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        footer {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="header-container">
         <header>
             <?php include('header.php'); ?>
-			<link rel="stylesheet" href="main.css">
         </header>
     </div>
 
@@ -80,97 +126,79 @@ footer {
         <a href="campaign.php" class="tool-button">Campaign Manager</a>
         <a href="broadcast.php" class="tool-button">Broadcast</a>
         <a href="dispatch.php" class="tool-button">Dispatch</a>
-		<a href="loyalty.php" class="tool-button">loyalty program</a>
-    </div>
-	<h1 align="center">Aspect Ratio Calculator</h1>
-    <form method="post" action="">
-        <label for="width">Original Width:</label>
-        <input type="number" id="width" name="width" required><br><br>
-
-        <label for="height">Original Height:</label>
-        <input type="number" id="height" name="height" required><br><br>
-
-        <label for="maxWidth">Max Width:</label>
-        <input type="number" id="maxWidth" name="maxWidth" required><br><br>
-
-        <label for="maxHeight">Max Height:</label>
-        <input type="number" id="maxHeight" name="maxHeight" required><br><br>
-
-        <input type="submit" name="submit" value="Calculate">
-    </form>
-
-    <?php
-    if (isset($_POST['submit'])) {
-        $width = $_POST['width'];
-        $height = $_POST['height'];
-        $maxWidth = $_POST['maxWidth'];
-        $maxHeight = $_POST['maxHeight'];
-
-        function scaleDimensions($width, $height, $maxWidth, $maxHeight) {
-            // Calculate the aspect ratio
-            $aspectRatio = $width / $height;
-
-            // Determine the new dimensions within the constraints
-            if ($width > $maxWidth) {
-                $newWidth = $maxWidth;
-                $newHeight = $maxWidth / $aspectRatio;
-            } else {
-                $newWidth = $width;
-                $newHeight = $height;
-            }
-
-            if ($newHeight > $maxHeight) {
-                $newHeight = $maxHeight;
-                $newWidth = $maxHeight * $aspectRatio;
-            }
-
-            return array('width' => round($newWidth, 2), 'height' => round($newHeight, 2));
-        }
-
-        $result = scaleDimensions($width, $height, $maxWidth, $maxHeight);
-        echo "<h2>Scaled Dimensions</h2>";
-        echo "Original Dimensions: {$width} x {$height}<br>";
-        echo "Scaled Dimensions: {$result['width']} x {$result['height']}";
-    }
-    ?>
-    <div class="form-container">
-        <h2>Add Branch</h2>
-        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
-            <label for="branch_name">Branch Name:</label>
-            <input type="text" id="branch_name" name="branch_name" required>
-            <br>
-            <label for="branch_address">Address:</label>
-            <input type="text" id="branch_address" name="branch_address" required>
-            <br>
-            <label for="branch_city">City:</label>
-            <input type="text" id="branch_city" name="branch_city" required>
-            <br>
-            <label for="branch_state">State:</label>
-            <input type="text" id="branch_state" name="branch_state" required>
-            <br>
-            <label for="branch_zip">Zip Code:</label>
-            <input type="text" id="branch_zip" name="branch_zip" required>
-            <br>
-            <input type="submit" value="Add Branch">
-        </form>
+        <a href="loyalty.php" class="tool-button">Loyalty Program</a>
+        <a href="checklists.php" class="tool-button">Checklists</a>
     </div>
 
-    <div class="form-container">
-        <h2>Add Material</h2>
-        <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
-            <label for="material_name">Material Name:</label>
-            <input type="text" id="material_name" name="material_name" required>
-            <br>
-            <label for="material_description">Description:</label>
-            <textarea id="material_description" name="material_description"></textarea>
-            <br>
-            <input type="submit" value="Add Material">
-        </form>
+    <div class="content-container">
+        <div class="section">
+            <div class="form-container">
+                <h2>Aspect Ratio Calculator</h2>
+                <form method="post" action="">
+                    <input type="number" id="width" name="width" placeholder="Original Width" required>
+                    <input type="number" id="height" name="height" placeholder="Original Height" required>
+                    <input type="number" id="maxWidth" name="maxWidth" placeholder="Max Width" required>
+                    <input type="number" id="maxHeight" name="maxHeight" placeholder="Max Height" required>
+                    <input type="submit" name="submit" value="Calculate">
+                </form>
+                <?php
+                if (isset($_POST['submit'])) {
+                    $width = $_POST['width'];
+                    $height = $_POST['height'];
+                    $maxWidth = $_POST['maxWidth'];
+                    $maxHeight = $_POST['maxHeight'];
+
+                    function scaleDimensions($width, $height, $maxWidth, $maxHeight) {
+                        $aspectRatio = $width / $height;
+                        if ($width > $maxWidth) {
+                            $newWidth = $maxWidth;
+                            $newHeight = $maxWidth / $aspectRatio;
+                        } else {
+                            $newWidth = $width;
+                            $newHeight = $height;
+                        }
+                        if ($newHeight > $maxHeight) {
+                            $newHeight = $maxHeight;
+                            $newWidth = $maxHeight * $aspectRatio;
+                        }
+                        return array('width' => round($newWidth, 2), 'height' => round($newHeight, 2));
+                    }
+
+                    $result = scaleDimensions($width, $height, $maxWidth, $maxHeight);
+                    echo "<p>Original: {$width} x {$height}<br>Scaled: {$result['width']} x {$result['height']}</p>";
+                }
+                ?>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="form-container">
+                <h2>Add Branch</h2>
+                <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+                    <input type="text" id="branch_name" name="branch_name" placeholder="Branch Name" required>
+                    <input type="text" id="branch_address" name="branch_address" placeholder="Address" required>
+                    <input type="text" id="branch_city" name="branch_city" placeholder="City" required>
+                    <input type="text" id="branch_state" name="branch_state" placeholder="State" required>
+                    <input type="text" id="branch_zip" name="branch_zip" placeholder="Zip Code" required>
+                    <input type="submit" value="Add Branch">
+                </form>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="form-container">
+                <h2>Add Material</h2>
+                <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>">
+                    <input type="text" id="material_name" name="material_name" placeholder="Material Name" required>
+                    <textarea id="material_description" name="material_description" placeholder="Description"></textarea>
+                    <input type="submit" value="Add Material">
+                </form>
+            </div>
+        </div>
     </div>
-<div class="footer">
-<?php
-include 'footer.php'; // Include your footer file
-?>
-</div>
+
+    <footer>
+        <?php include 'footer.php'; ?>
+    </footer>
 </body>
 </html>

@@ -31,7 +31,7 @@ if (isset($_POST['upload'])) {
         if ($count > 0) continue; // Skip existing dates
 
         // Insert new data
-        $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS, SLT, LBM) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $conn->prepare($query);
         $stmt->execute(array_merge([$date, $total_registration], $stores));
     }
@@ -75,7 +75,7 @@ if (isset($_POST['add_entry'])) {
         $count = $stmt->fetchColumn();
 
         if ($count == 0) {
-            $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $query = "INSERT INTO loyalty_registration (registration_date, total_registration, GC, KAB, IBEX, MM, CM, CV, TP, NGW, ZBR, LM, KS, SLT, LBM) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $conn->prepare($query);
             
             // Merge date, total_registration, and store values into one array
@@ -133,7 +133,7 @@ $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 // Prepare data for charts
 $dates = array_column($data, 'registration_date');
 $totalRegistrations = array_column($data, 'total_registration');
-$stores = ['GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS'];
+$stores = ['GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS', 'SLT', 'LBM'];
 
 // Weekly data
 $weeklyData = [];
@@ -211,7 +211,7 @@ if (isset($_POST['download_csv'])) {
     header('Content-Disposition: attachment; filename="loyalty_data.csv"');
 
     $output = fopen('php://output', 'w');
-    fputcsv($output, array('Date', 'Total Registrations', 'GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS'));
+    fputcsv($output, array('Date', 'Total Registrations', 'GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS', 'SLT', 'LBM'));
 
     foreach ($data as $row) {
         fputcsv($output, $row);
@@ -325,6 +325,8 @@ if (isset($_POST['download_csv'])) {
                 <th>ZBR</th>
                 <th>LM</th>
                 <th>KS</th>
+				<th>SLT</th>
+				<th>LBM</th>
                 <th>Delete</th>
             </tr>
         </thead>
@@ -346,6 +348,8 @@ if (isset($_POST['download_csv'])) {
                     echo "<td>{$row['ZBR']}</td>";
                     echo "<td>{$row['LM']}</td>";
                     echo "<td>{$row['KS']}</td>";
+					echo "<td>{$row['SLT']}</td>";
+					echo "<td>{$row['LBM']}</td>";
                     echo "<td>
                         <form method='post'>
                             <input type='hidden' name='delete_date' value='{$row['registration_date']}'>

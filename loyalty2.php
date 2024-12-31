@@ -5,7 +5,7 @@ require_once 'functions.php';
 // Initialize variables
 $message = '';
 $data = [];
-$stores = ['GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS'];
+$stores = ['GC', 'KAB', 'IBEX', 'MM', 'CM', 'CV', 'TP', 'NGW', 'ZBR', 'LM', 'KS', 'SLT', 'LBM'];
 
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -168,6 +168,8 @@ $dayOfWeekData = prepareDayOfWeekData($data);
                 <th>ZBR</th>
                 <th>LM</th>
                 <th>KS</th>
+				<th>SLT</th>
+				<th>LBM</th>
                 <th>Delete</th>
             </tr>
         </thead>
@@ -189,6 +191,8 @@ $dayOfWeekData = prepareDayOfWeekData($data);
                     echo "<td>{$row['ZBR']}</td>";
                     echo "<td>{$row['LM']}</td>";
                     echo "<td>{$row['KS']}</td>";
+					echo "<td>{$row['SLT']}</td>";
+					echo "<td>{$row['LBM']}</td>";
                     echo "<td>
                         <form method='post'>
                             <input type='hidden' name='delete_date' value='{$row['registration_date']}'>

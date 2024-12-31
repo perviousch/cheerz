@@ -1,8 +1,8 @@
 <?php
-$host = 'sql3.freemysqlhosting.net';
-$dbname = 'sql3728775';
-$username = 'sql3728775';
-$password = 'zdxyhRP89d';
+$host = 'localhost';
+$dbname = 'cheersproducts';
+$username = 'root';
+$password = '';
 $port = 3306;
 
 try {
